@@ -15,6 +15,11 @@ const connection = new Pool({
     database: 'boardcamp'
 });
 
+app.get('/categories', async (req, res) => {
+    const categories = await connection.query('SELECT * FROM categories');
+    res.send(categories.rows).sendStatus(200);
+})
+
 app.post('/categories', async (req, res) => {
     const name = req.body.name;
     try {
@@ -30,7 +35,7 @@ app.post('/categories', async (req, res) => {
         await connection.query('SELECT * FROM categories');
         await connection.query('INSERT INTO categories (name) values ($1)', [name]);
         res.sendStatus(201);
-        
+
     } catch (error) {
         console.log(error);
         res.sendStatus(500);
