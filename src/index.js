@@ -1,19 +1,10 @@
 import express from 'express';
 import cors from 'cors';
-import pg from 'pg';
+import connection from './database/database.js';
 
-const { Pool } = pg;
 const app = express();
 app.use(express.json());
 app.use(cors());
-
-const connection = new Pool({
-    user: 'bootcamp_role',
-    password: 'senha_super_hiper_ultra_secreta_do_role_do_bootcamp',
-    host: 'localhost',
-    port: 5432,
-    database: 'boardcamp'
-});
 
 app.get('/categories', async (req, res) => {
     const categories = await connection.query('SELECT * FROM categories');
