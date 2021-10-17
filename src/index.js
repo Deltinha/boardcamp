@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import Joi from 'joi';
 import connection from './database/database.js';
 
 const app = express();
@@ -38,7 +39,7 @@ app.get('/games', async (req, res) => {
     if (req.query.name !== undefined) {
         queryString = req.query.name;
     }
-    
+
     try {   
             const games = await connection.query(`
                 SELECT 
@@ -81,6 +82,37 @@ app.post('/games', async (req, res) => {
 
         await connection.query('SELECT * FROM games');
         await connection.query('INSERT INTO games (name, image, "stockTotal", "categoryId", "pricePerDay" ) values ($1, $2, $3, $4, $5)', [name, image, stockTotal, categoryId, pricePerDay]);
+        res.sendStatus(201);
+
+    } catch (error) {
+        console.log(error);
+        res.sendStatus(500);
+    }
+})
+
+app.post('/customers', async (req,res) => {
+    const user = req.body;
+    try {
+
+        const userSchema = Joi.object({
+            name: Joi.string().min(1).required(),
+            phone: Joi.string().pattern(/^[0-9]{10,11}$/),
+            cpf: Joi.string().pattern(/^[0-9]{11}$/),
+            birthday: Joi.string().pattern(/^([0-9]{4})-(0[1-9]{1}|1[0-2]{1})-(0[1-9]{1}|[1-2]{1}[0-9]{1}|[3]{1}[0-1]{1})$/),
+        })
+
+        const userValidation = userSchema.validate(user);
+
+        if (userValidation.error !== undefined) {
+            return res.sendStatus(400);
+        }
+
+        const duplicateCheck = await connection.query('SELECT * FROM customers WHERE cpf = $1', [user.cpf]);
+        if(duplicateCheck.rows.length !== 0) {
+            return res.sendStatus(409);
+        }
+
+        await connection.query('INSERT INTO customers (name, phone, cpf, birthday ) values ($1, $2, $3, $4)', [user.name, user.phone, user.cpf, user.birthday]);
         res.sendStatus(201);
 
     } catch (error) {
