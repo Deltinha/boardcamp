@@ -139,4 +139,20 @@ app.get('/customers', async (req, res) => {
     }
 })
 
+app.get('/customers/:id', async (req, res) => {
+    const id = req.params.id;
+    try {
+        const customer = await connection.query('SELECT * FROM customers WHERE id=$1', [id]);
+        
+        if (customer.rows.length === 0) {
+            res.sendStatus(404);
+        }
+
+        res.send(customer.rows[0]).sendStatus(200);
+    } catch (error) {
+        console.log(error);
+        res.sendStatus(500);
+    }
+})
+
 app.listen(4000);
