@@ -79,7 +79,6 @@ app.post('/games', async (req, res) => {
             return res.sendStatus(409);
         }
 
-        await connection.query('SELECT * FROM games');
         await connection.query('INSERT INTO games (name, image, "stockTotal", "categoryId", "pricePerDay" ) values ($1, $2, $3, $4, $5)', [name, image, stockTotal, categoryId, pricePerDay]);
         res.sendStatus(201);
 
