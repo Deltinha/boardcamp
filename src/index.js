@@ -24,7 +24,6 @@ app.post('/categories', async (req, res) => {
             return res.sendStatus(409);
         }
 
-        await connection.query('SELECT * FROM categories');
         await connection.query('INSERT INTO categories (name) values ($1)', [name]);
         res.sendStatus(201);
 
