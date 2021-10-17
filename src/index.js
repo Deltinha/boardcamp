@@ -121,4 +121,24 @@ app.post('/customers', async (req,res) => {
     }
 })
 
+app.get('/customers', async (req, res) => {
+    let queryString ='%';
+    if (req.query.cpf !== undefined) {
+        queryString = req.query.cpf;
+    }
+
+    try {   
+            const games = await connection.query(`
+                SELECT * FROM customers 
+                WHERE cpf LIKE $1 || '%'
+            `,[queryString]);
+            
+            res.send(games.rows).status(200);
+
+    } catch (error) {
+        console.log(error);
+        res.sendStatus(500);
+    }
+})
+
 app.listen(4000);
