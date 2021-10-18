@@ -3,7 +3,9 @@ import cors from 'cors';
 import Joi from 'joi';
 import connection from './database/database.js';
 import dayjs from 'dayjs';
+import 'dayjs/locale/pt-br.js';
 
+dayjs.locale('pt-br');
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -227,6 +229,50 @@ app.get('/rentals', async (req, res) => {
 
         res.send(rentals.rows).status(200);
 
+    } catch (error) {
+        console.log(error);
+        res.sendStatus(500);
+    }
+})
+
+app.post('/rentals/:id/return', async (req, res) => {
+    const id = req.params.id;
+    const todaysDate = dayjs();
+    let delayFee = 0;
+
+    try {
+        
+        const rental = await connection.query(`SELECT * FROM rentals WHERE id = $1`, [id]);
+        if (rental.rows.length === 0) {
+            return res.sendStatus(404);
+        }
+
+        if (rental.rows[0]['returnDate'] !== null) {
+            return res.sendStatus(400)
+        }
+
+        const {
+            rentDate, 
+            gameId,
+            daysRented
+        } = rental.rows[0];
+
+        const returnDate = dayjs(rentDate).add(daysRented, 'day');
+
+        const game = await connection.query(`SELECT * FROM games WHERE id = $1`,[gameId]);
+        const {pricePerDay} = game.rows[0];
+        
+        const delay = parseInt((todaysDate - returnDate)  / (1000 * 60 * 60 * 24));
+        console.log(delay)
+        
+        if (delay > 0) {
+            delayFee = pricePerDay * delay;
+        }
+
+        await connection.query(`UPDATE rentals SET "returnDate" = $1 WHERE id = $2`,[todaysDate.format('YYYY-MM-DD'), id]);
+        await connection.query(`UPDATE rentals SET "delayFee" = $1 WHERE id = $2`,[delayFee, id]);
+
+        res.sendStatus(200);
     } catch (error) {
         console.log(error);
         res.sendStatus(500);
