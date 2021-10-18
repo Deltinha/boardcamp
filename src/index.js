@@ -122,6 +122,42 @@ app.post('/customers', async (req,res) => {
     }
 })
 
+app.put('/customers/:id', async (req, res) => {
+    const id = req.params.id;
+    const user = req.body;
+
+    const userSchema = Joi.object({
+        name: Joi.string().min(1).required(),
+        phone: Joi.string().pattern(/^[0-9]{10,11}$/),
+        cpf: Joi.string().pattern(/^[0-9]{11}$/),
+        birthday: Joi.string().pattern(/^([0-9]{4})-(0[1-9]{1}|1[0-2]{1})-(0[1-9]{1}|[1-2]{1}[0-9]{1}|[3]{1}[0-1]{1})$/),
+    })
+
+    const userValidation = userSchema.validate(user);
+
+    if (userValidation.error !== undefined) {
+        return res.sendStatus(400);
+    }
+
+    try {
+
+        const duplicateCheck = await connection.query('SELECT * FROM customers WHERE cpf = $1 AND id != $2', [user.cpf, id]);
+        if(duplicateCheck.rows.length !== 0) {
+            return res.sendStatus(409);
+        }
+
+        await connection.query('UPDATE customers SET "name" = $1 WHERE id = $2', [user.name, id]);
+        await connection.query('UPDATE customers SET "phone" = $1 WHERE id = $2', [user.phone, id]);
+        await connection.query('UPDATE customers SET "cpf" = $1 WHERE id = $2', [user.cpf, id]);
+        await connection.query('UPDATE customers SET "birthday" = $1 WHERE id = $2', [user.birthday, id]);
+        res.sendStatus(200);
+
+    } catch (error){
+        console.log(error);
+        res.sendStatus(500);
+    }
+})
+
 app.get('/customers', async (req, res) => {
     let queryString ='%';
     if (req.query.cpf !== undefined) {
