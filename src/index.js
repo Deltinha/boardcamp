@@ -93,20 +93,20 @@ app.post('/games', async (req, res) => {
 
 app.post('/customers', async (req,res) => {
     const user = req.body;
+    const userSchema = Joi.object({
+        name: Joi.string().min(1).required(),
+        phone: Joi.string().pattern(/^[0-9]{10,11}$/),
+        cpf: Joi.string().pattern(/^[0-9]{11}$/),
+        birthday: Joi.string().pattern(/^([0-9]{4})-(0[1-9]{1}|1[0-2]{1})-(0[1-9]{1}|[1-2]{1}[0-9]{1}|[3]{1}[0-1]{1})$/),
+    })
+
+    const userValidation = userSchema.validate(user);
+
+    if (userValidation.error !== undefined) {
+        return res.sendStatus(400);
+    }
+    
     try {
-
-        const userSchema = Joi.object({
-            name: Joi.string().min(1).required(),
-            phone: Joi.string().pattern(/^[0-9]{10,11}$/),
-            cpf: Joi.string().pattern(/^[0-9]{11}$/),
-            birthday: Joi.string().pattern(/^([0-9]{4})-(0[1-9]{1}|1[0-2]{1})-(0[1-9]{1}|[1-2]{1}[0-9]{1}|[3]{1}[0-1]{1})$/),
-        })
-
-        const userValidation = userSchema.validate(user);
-
-        if (userValidation.error !== undefined) {
-            return res.sendStatus(400);
-        }
 
         const duplicateCheck = await connection.query('SELECT * FROM customers WHERE cpf = $1', [user.cpf]);
         if(duplicateCheck.rows.length !== 0) {
